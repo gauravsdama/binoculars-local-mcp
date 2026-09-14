@@ -127,6 +127,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.models/
 
 # Spyder project settings
 .spyderproject
@@ -162,3 +163,4 @@ cython_debug/
 samples/
 
 **.*ipynb
+.DS_Store
