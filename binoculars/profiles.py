@@ -34,9 +34,10 @@ QWEN_05B = ModelProfile(
     low_fpr_threshold=0.905291736125946,
     max_tokens=256,
     calibration_summary=(
-        "Calibrated on 360 texts and evaluated on a disjoint 240-text holdout from "
-        "the bundled CC-News, CNN, and PubMed human/Falcon samples. Holdout accuracy "
-        "was 88.3%; conservative-mode human FPR was 2.5% and machine TPR was 60.0%."
+        "Calibrated on 360 local texts and evaluated on a disjoint 240-text holdout "
+        "derived from CC-News, CNN, and PubMed human/Falcon samples. The calibration "
+        "corpus is not distributed. Holdout accuracy was 88.3%; conservative-mode "
+        "human FPR was 2.5% and machine TPR was 60.0%."
     ),
 )
 
