@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python and dependencies
+        run: uv sync --python 3.12 --extra dev --locked
+      - name: Run tests
+        run: uv run pytest -q
+      - name: Run Ruff
+        run: uv run ruff check binoculars tests
+      - name: Run Bandit
+        run: uv run bandit -q -c pyproject.toml -r binoculars
+      - name: Audit dependencies
+        run: uv run pip-audit
