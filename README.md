@@ -21,6 +21,27 @@ Installing Python packages may contact a package index. Model acquisition is a s
 
 Python 3.11 through 3.13 is supported. This checkout uses Python 3.12 with `uv`:
 
+On a Mac, begin with the optional setup helper. Its default mode only reports macOS,
+processor, memory, disk, Python, and `uv` readiness:
+
+```bash
+./scripts/setup_macos.sh
+```
+
+Dependency installation and model acquisition remain separate choices:
+
+```bash
+./scripts/setup_macos.sh --install
+./scripts/setup_macos.sh --download-models
+source .models/env.zsh
+```
+
+The second command explains the download before it starts, fetches the two pinned model
+revisions, verifies each SafeTensors weight file, and writes an ignored local environment file.
+Use `--yes` only after reviewing the requested operation.
+
+For manual setup:
+
 ```bash
 uv sync --python python3.12 --extra dev --locked
 ```
