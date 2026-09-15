@@ -8,7 +8,10 @@ version = "0.1.0"
 description = "Local-only Binoculars detector exposed as an MCP server"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { file = "LICENSE.md" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE.md", "NOTICE.md"]
+authors = [{ name = "Gaurav Dama" }]
+keywords = ["ai-text-detection", "mcp", "offline", "local-first"]
 dependencies = [
   "mcp>=1.13,<2",
   "numpy>=1.26,<3",

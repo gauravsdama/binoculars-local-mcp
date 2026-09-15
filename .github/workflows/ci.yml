@@ -26,3 +26,9 @@ jobs:
         run: uv run bandit -q -c pyproject.toml -r binoculars
       - name: Audit dependencies
         run: uv run pip-audit
+      - name: Check release surface
+        run: uv run python scripts/release_guard.py
+      - name: Build and inspect distributions
+        run: |
+          uv build
+          uv run python scripts/verify_distribution.py
