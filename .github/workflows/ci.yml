@@ -18,10 +18,14 @@ jobs:
           enable-cache: true
       - name: Install Python and dependencies
         run: uv sync --python 3.12 --extra dev --locked
+      - name: Verify lock file
+        run: uv lock --check
       - name: Run tests
         run: uv run pytest -q
+      - name: Check formatting
+        run: uv run ruff format --check binoculars tests scripts
       - name: Run Ruff
-        run: uv run ruff check binoculars tests
+        run: uv run ruff check binoculars tests scripts
       - name: Run Bandit
         run: uv run bandit -q -c pyproject.toml -r binoculars
       - name: Audit dependencies

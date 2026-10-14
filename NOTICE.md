@@ -8,7 +8,7 @@ retained locally as the `upstream-base` branch at commit `b4a51ef`.
 
 Gaurav Dama's derivative work begins after that baseline and includes the MCP
 stdio interface, enforced offline model loading, process-level network guard,
-compact-model profile and calibration, weight verification, macOS setup,
+compact-model profile and calibration, model-manifest verification, macOS setup,
 packaging, tests, CI, and security documentation.
 
 The optional Qwen model files are not part of this repository. The setup tool

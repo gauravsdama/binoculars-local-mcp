@@ -32,6 +32,7 @@ async def test_stdio_server_lists_and_calls_tools() -> None:
             assert result.isError is False
             assert result.structuredContent is not None
             assert result.structuredContent["network_guard_verified"] is True
+            assert result.structuredContent["network_access"] == "blocked"
             assert result.structuredContent["transport"] == "stdio"
             assert result.structuredContent["profile"] == "qwen2.5-0.5b"
 

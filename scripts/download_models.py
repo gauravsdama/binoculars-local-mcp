@@ -4,35 +4,22 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 from pathlib import Path
 
 from huggingface_hub import snapshot_download
 
-from binoculars.profiles import QWEN_05B
-
-MODEL_FILES = [
-    "config.json",
-    "generation_config.json",
-    "merges.txt",
-    "model.safetensors",
-    "tokenizer.json",
-    "tokenizer_config.json",
-    "vocab.json",
-]
+from binoculars.integrity import verify_model_directory
+from binoculars.profiles import QWEN_05B, ModelFile
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def fetch(repository: str, revision: str, expected: str, destination: Path) -> None:
-    weights = destination / "model.safetensors"
-    if weights.is_file() and sha256(weights) == expected:
+def fetch(
+    repository: str,
+    revision: str,
+    manifest: tuple[ModelFile, ...],
+    destination: Path,
+) -> None:
+    existing = verify_model_directory(destination, manifest)
+    if existing.verified:
         print(f"Verified existing model: {destination}")
         return
 
@@ -48,11 +35,14 @@ def fetch(repository: str, revision: str, expected: str, destination: Path) -> N
         repo_id=repository,
         revision=revision,
         local_dir=destination,
-        allow_patterns=MODEL_FILES,
+        allow_patterns=[item.name for item in manifest],
     )
-    if not weights.is_file() or sha256(weights) != expected:
-        raise SystemExit(f"Weight verification failed for {destination}")
-    print(f"Verified model weights: {destination}")
+    verification = verify_model_directory(destination, manifest)
+    if not verification.verified:
+        raise SystemExit(
+            f"Model snapshot verification failed for {destination}: {verification.error}"
+        )
+    print(f"Verified {verification.verified_files} model files: {destination}")
 
 
 def main() -> None:
@@ -63,13 +53,13 @@ def main() -> None:
     fetch(
         QWEN_05B.observer_repository,
         QWEN_05B.observer_revision,
-        QWEN_05B.observer_sha256,
+        QWEN_05B.observer_files,
         root / "qwen2.5-0.5b-base",
     )
     fetch(
         QWEN_05B.performer_repository,
         QWEN_05B.performer_revision,
-        QWEN_05B.performer_sha256,
+        QWEN_05B.performer_files,
         root / "qwen2.5-0.5b-instruct",
     )
 

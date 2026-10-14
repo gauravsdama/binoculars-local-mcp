@@ -7,15 +7,14 @@ The detector returns a statistical signal, not proof that a person or model wrot
 ## Local security boundary
 
 - MCP transport is `stdio`; the server does not listen on a port.
-- The MCP process blocks TCP and UDP connections while leaving local Unix-domain sockets available to libraries.
-- Hugging Face and Transformers offline modes are forced on.
+- Before MCP, model, or HTTP-capable dependencies import, the MCP process forces Hugging Face and Transformers offline modes and installs a guard for common Python TCP/UDP socket egress. Local Unix-domain sockets remain available to libraries.
 - Model arguments must resolve to existing local directories; remote model IDs are rejected.
 - Loads require `local_files_only=True`, `trust_remote_code=False`, and SafeTensors weights.
-- The compact profile verifies the SHA-256 digest of each model weight file before reporting readiness or loading the detector.
+- The compact profile verifies SHA-256 digests for every required config, tokenizer, vocabulary, merge, generation-config, and SafeTensors file before reporting readiness or loading the detector. Cached digests are invalidated when file identity or metadata changes.
 - Both tools are read-only and declare `openWorldHint=false`.
 - Input is limited to 100,000 characters, and the compact profile analyzes at most 256 tokens.
 
-Installing Python packages may contact a package index. Model acquisition is a separate explicit step. Once configured, the server requires local model files and is designed to run without application network access.
+Installing Python packages may contact a package index. Model acquisition is a separate explicit step. Once configured, model inference uses only verified local files. The in-process guard covers common Python socket APIs; it is defense in depth, not an operating-system sandbox or a guarantee against native code, subprocesses, or a compromised dependency. Use an OS-level network sandbox when that stronger boundary is required.
 
 ## Install
 
@@ -37,8 +36,8 @@ source .models/env.zsh
 ```
 
 The second command explains the download before it starts, fetches the two pinned model
-revisions, verifies each SafeTensors weight file, and writes an ignored local environment file.
-Use `--yes` only after reviewing the requested operation.
+revisions, verifies every file in each pinned model manifest, and writes an ignored local
+environment file. Use `--yes` only after reviewing the requested operation.
 
 For manual setup:
 
@@ -52,9 +51,11 @@ Model weights stay outside Git under `.models/`. Point the server at compatible 
 export BINOCULARS_PROFILE=qwen2.5-0.5b
 export BINOCULARS_OBSERVER_MODEL=/path/to/qwen2.5-0.5b-base
 export BINOCULARS_PERFORMER_MODEL=/path/to/qwen2.5-0.5b-instruct
+export BINOCULARS_DEVICE=cpu  # or mps, cuda, cuda:N, or auto
 ```
 
 Without both model directories, the MCP server can still start, but `binoculars_status` reports that analysis is not ready.
+Configuration is captured once when the MCP process starts; restart it after changing these environment variables.
 
 ## Compact model profile
 
@@ -75,7 +76,7 @@ Accepts `text` and an optional threshold mode:
 - `low-fpr` is the default and is more conservative about AI-generated labels.
 - `accuracy` provides the profile's broader screening threshold.
 
-The result includes the score, threshold, mode, label, model profile, and calibration summary. Lower scores indicate a stronger AI-generated signal under the configured threshold. Samples of roughly 200-300 words are generally more useful than very short passages.
+The result includes the score, threshold, mode, label, model profile, device, character count, original tokenizer count, analyzed tokenizer count, and whether truncation occurred. Lower scores indicate a stronger AI-generated signal under the configured threshold. Inputs with fewer than eight analyzed tokens are rejected instead of labeled, as are non-finite numerical results. Samples of roughly 200-300 words are generally more useful than very short passages.
 
 ## Run and verify
 
@@ -92,6 +93,17 @@ Available project checks are:
 .venv/bin/ruff check binoculars tests
 .venv/bin/bandit -q -c pyproject.toml -r binoculars
 .venv/bin/pip-audit
+```
+
+Requests wait at most 120 seconds for another analysis to release the detector lock. Set `BINOCULARS_LOCK_TIMEOUT_SECONDS` between `0.1` and `3600` to change that queueing bound. Once native model inference starts, MCP cancellation cannot safely interrupt it in-process; process isolation is required for a hard execution deadline.
+
+The default test suite uses tiny local models and runs without downloads. With the pinned models already present, run the CPU/MPS golden and performance checks explicitly:
+
+```bash
+BINOCULARS_RUN_DEVICE_TESTS=1 \
+BINOCULARS_OBSERVER_MODEL=/path/to/qwen2.5-0.5b-base \
+BINOCULARS_PERFORMER_MODEL=/path/to/qwen2.5-0.5b-instruct \
+uv run pytest -q tests/test_device_regression.py
 ```
 
 Inspect a Codex registration with:

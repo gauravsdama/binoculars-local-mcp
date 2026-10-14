@@ -3,11 +3,20 @@
 
 from __future__ import annotations
 
+import argparse
 import tarfile
 import zipfile
 from pathlib import Path
 
-dist = Path(__file__).resolve().parents[1] / "dist"
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--dist",
+    type=Path,
+    default=Path(__file__).resolve().parents[1] / "dist",
+    help="directory containing wheel and source archives",
+)
+args = parser.parse_args()
+dist = args.dist
 archives = sorted(dist.glob("*"))
 if not archives:
     raise SystemExit("No distribution archives found; run `uv build` first.")
@@ -23,7 +32,13 @@ for archive in archives:
             names = package.getnames()
     else:
         continue
-    required_suffixes = {"binoculars/mcp_server.py", "LICENSE.md", "NOTICE.md"}
+    required_suffixes = {
+        "binoculars/integrity.py",
+        "binoculars/mcp_server.py",
+        "binoculars/profiles.py",
+        "LICENSE.md",
+        "NOTICE.md",
+    }
     if archive.name.endswith(".tar.gz"):
         required_suffixes.add("README.md")
     normalized = {name.split("/", 1)[-1] for name in names}
